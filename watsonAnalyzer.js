@@ -40,37 +40,14 @@ function setUpCheckerButton(button, options) {
 	styleButton(options);
 
 	button.setAttribute('title', 'Analyze The Tone of The Text');
+	button.setAttribute('class', 'watson-check');
 	
 	button.addEventListener('click', function() {
-		var popup = document.createElement('div');
-		
-		popup.style.position = 'absolute';
-		popup.style.backgroundColor = "#eee";
-		popup.style.width = "200px";
-		popup.style.height = "200px";
-		popup.style.right = "0%";
-		popup.style.bottom = "20px";
-		popup.style.borderRadius = "10px";
-		popup.style.padding = "10px";
-		popup.style.boxShadow = "0 0 4px rgba(0,0,0,0.4)";
-		
 
-		popup.innerHTML = "<ul><li>Tone: Blah</li></ul>";
+		var analysis = displayAnalysis()
+		var popup = createPopup(analysis);
 
 		button.appendChild(popup);
-		popup.setAttribute('class', 'show');
-
-		document.body.addEventListener('click', removePopup, true);
-
-		function removePopup(e) {
-			popup.setAttribute('class', 'hide show');
-			
-			setTimeout(function() {
-				popup.remove();
-			}, 500);
-
-			document.body.removeEventListener('click', removePopup);
-		}
 	});
 
 	function styleButton(options) {
@@ -78,13 +55,14 @@ function setUpCheckerButton(button, options) {
 
 		buttonCss.height = options.height || '40px';
 		buttonCss.width = options.width || '40px';
-		buttonCss.backgroundColor = options.backgroundColor || 'rgba(0,0,0,0.2)';
 		buttonCss.position = options.position || 'absolute';
 		buttonCss.right = options.right || '5px';
 		buttonCss.bottom = options.bottom || '5px';
 		buttonCss.borderRadius = options.borderRadius || '50%';
-		buttonCss.backgroundImage = "url('https://d30y9cdsu7xlg0.cloudfront.net/png/71513-200.png')";
-		buttonCss.backgroundSize = "cover";
+		buttonCss.backgroundImage = "url('https://upload.wikimedia.org/wikipedia/en/0/00/IBM_Watson_Logo_2017.png')";
+		buttonCss.backgroundSize = "90%";
+		buttonCss.backgroundRepeat = "no-repeat";
+		buttonCss.backgroundPosition = "center center";
 		buttonCss.cursor = "pointer";		
 
 		var parentStyles = getComputedStyle(button.parentElement,null);
@@ -92,48 +70,45 @@ function setUpCheckerButton(button, options) {
 			button.parentElement.style.position = 'relative';
 		}
 	}
-	
 }
 
-function addCSS() {
-	var css = document.createElement('style');
-	css.innerHTML = "\
-	.show {\
-		opacity: 1; \
-		animation-name: show;\
-		animation-duration: 0.2s;\
-	}\
-	.hide {\
-		opacity: 0;\
-		animation-name: hide;\
-		animation-duration: 0.2s;\
-	}\
-	@keyframes show {\
-		0% {\
-			opacity: 0;	\
-			bottom: 0;	\
-		}\
-		100% {\
-			opacity: 1;\
-			bottom: 20px;	\
-		}\
-	}\
-	@keyframes hide {\
-		0% {\
-			opacity: 1;	\
-			bottom: 20px;	\
-		}\
-		100% {\
-			opacity: 0;\
-			bottom: 0;	\
-		}\
-	}\
-	";
+function createPopup(childElement) {
+	var popup = document.createElement('div');
+	
+	popup.style.position = 'absolute';
+	popup.style.backgroundColor = "#eee";
+	popup.style.width = "200px";
+	popup.style.height = "200px";
+	popup.style.right = "0%";
+	popup.style.bottom = "20px";
+	popup.style.borderRadius = "5px";
+	popup.style.padding = "10px";
+	popup.style.boxShadow = "0 0 4px rgba(0,0,0,0.4)";
+	popup.style.overflow = "scroll";
 
-	document.body.appendChild(css);
-} 
+	popup.appendChild(childElement);
 
-var tone = {
+	popup.setAttribute('class', 'show popup');
+
+	document.body.addEventListener('click', removePopup, true);
+
+	function removePopup(e) {
+		if (e.target.getAttribute('id') != 'watson-details-button' 
+			&& e.target.getAttribute('id')  != 'watson-back-button') {
+			popup.setAttribute('class', 'hide show popup');
+		
+			setTimeout(function() {
+				popup.remove();
+			}, 200);
+
+			document.body.removeEventListener('click', removePopup);
+		}
+	}
+
+	return popup;
+}
+
+var response = {
   "document_tone": {
     "tone_categories": [
       {
@@ -171,15 +146,162 @@ var tone = {
   }
 }
 
-function analyze(text) {
-	fetch('https://gateway.watsonplatform.net/tone-analyzer/api', { 
-	   method: 'post', 
-	   headers: {
-	     'Authorization': 'Basic '+btoa('6e7e467f-4798-4eb2-ad4f-b47c669718fa:aLTHlyd2agPU'), 
-	     'X-Watson-Learning-Opt-Out': 'true'
-	 	}, 
-	   body: 'A=1&B=2'
-	}).then(data => data.json()).then(data => {
-		console.log(data);
+function displayAnalysis(text) {
+	let tones = response.document_tone.tone_categories[0].tones;
+	
+	let container = document.createElement("div");
+	container.setAttribute('class', 'result-container');
+
+	let topBar = document.createElement("div");
+	topBar.setAttribute('class', 'top-bar');
+	container.appendChild(topBar);
+
+	let detailButton = document.createElement("div");
+	detailButton.setAttribute('id', 'watson-details-button');
+	detailButton.setAttribute('class', 'details enabled');
+	detailButton.innerHTML = 'details';
+	topBar.appendChild(detailButton);
+	
+	var backButton = document.createElement('div');
+	backButton.setAttribute('id','watson-back-button');
+	backButton.setAttribute('class','back-button disabled');
+	backButton.innerHTML = '<';
+	topBar.appendChild(backButton);
+
+	detailButton.addEventListener('click', function(e) {
+		e.stopPropagation();
+		
+		backButton.setAttribute('class', 'back-button enabled');
+		detailButton.setAttribute('class', 'details disabled');
+		
+		displayContent(getSecondaryContent());
 	});
+
+	backButton.addEventListener('click', function(e) {
+		e.stopPropagation();
+
+		detailButton.setAttribute('class', 'details enabled');
+		backButton.setAttribute('class', 'back-button disabled');
+
+		displayContent(getMainContent());
+	});
+
+	let content = document.createElement("div");
+	content.setAttribute('class', 'watson-content');
+	container.appendChild(content);
+
+	displayContent(getMainContent());
+
+	return container;
+
+	function displayContent(html) {
+		if (typeof html == 'string') {
+			content.innerHTML = html;
+		} else {
+			content.innerHTML = '';
+			content.appendChild(html);
+		}
+	}
+
+	function getMainContent() {
+		return "yay";
+		
+	}
+
+	function getSecondaryContent() {
+		let list = document.createElement("ul");
+		for (var i = 0; i < tones.length; i++) {
+			var tone = tones[i];
+			
+			var tone_name = tone.tone_name
+			var tone_score = Math.round(tone.score/1 * 100);
+			list.innerHTML += "<li><span class='tone-title'>" + tone_name + ":</span> <span class='tone-score'>" + tone_score + "%</span></li>";
+		}
+
+		return list;
+	}
 }
+
+function addCSS() {
+	var css = document.createElement('style');
+	css.innerHTML = "\
+	.watson-check {\
+		/*opacity: 0;\
+		animation-name: hide;\
+		animation-duration: 0.2s;*/\
+		transition: background-color 0.2s;\
+	}\
+	.watson-check:hover {\
+		background-color: rgba(0,0,0,0.1);\
+	}\
+	.watson-check .popup ul {\
+		list-style: none;\
+		padding-left: 0;\
+	}\
+	.watson-check .popup .top-bar {\
+		overflow: auto;\
+	}\
+	.watson-check .popup .top-bar .back-button {\
+		float: left;\
+		position: relative;\
+		left: 0;\
+		transition: color 0.1s, left 0.1s;\
+	}\
+	.watson-check .popup .top-bar .back-button.enable {\
+		color: initial;\
+		left: 0;\
+	}\
+	.watson-check .popup .top-bar .back-button.disabled {\
+		color: transparent;\
+		left: -20px;\
+	}\
+	.watson-check .popup .top-bar .details {\
+		float: right;\
+		position: relative;\
+		right: 0;\
+		transition: opacity 0.1s;\
+	}\
+	.watson-check .popup .top-bar .details.enabled {\
+		opacity: 1;\
+	}\
+	.watson-check .popup .top-bar .details.disabled {\
+		opacity: 0;\
+	}\
+	.watson-check .popup .tone-title {\
+		font-size: 13px;\
+		font-weight: bold;\
+	}\
+	.show {\
+		opacity: 1; \
+		animation-name: show;\
+		animation-duration: 0.1s;\
+	}\
+	.hide {\
+		opacity: 0;\
+		animation-name: hide;\
+		animation-duration: 0.1s;\
+	}\
+	@keyframes show {\
+		0% {\
+			opacity: 0;	\
+			bottom: 0;	\
+		}\
+		100% {\
+			opacity: 1;\
+			bottom: 20px;	\
+		}\
+	}\
+	@keyframes hide {\
+		0% {\
+			opacity: 1;	\
+			bottom: 20px;	\
+		}\
+		100% {\
+			opacity: 0;\
+			bottom: 0;	\
+		}\
+	}\
+	";
+
+	document.body.appendChild(css);
+} 
