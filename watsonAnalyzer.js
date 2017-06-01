@@ -42,8 +42,8 @@ function setUpCheckerButton(button, options) {
 	button.setAttribute('title', 'Analyze The Tone of The Text');
 	button.setAttribute('class', 'watson-check');
 	
-	button.addEventListener('click', function() {
-
+	button.addEventListener('click', function(e) {
+		analyze()
 		var analysis = displayAnalysis()
 		var popup = createPopup(analysis);
 
@@ -80,9 +80,9 @@ function createPopup(childElement) {
 	popup.style.width = "200px";
 	popup.style.height = "200px";
 	popup.style.right = "0%";
-	popup.style.bottom = "20px";
+	popup.style.bottom = "0px";
 	popup.style.borderRadius = "5px";
-	popup.style.padding = "10px";
+	popup.style.padding = "0";
 	popup.style.boxShadow = "0 0 4px rgba(0,0,0,0.4)";
 	popup.style.overflow = "scroll";
 
@@ -114,7 +114,7 @@ var response = {
       {
         "tones": [
           {
-            "score": 0.134622,
+            "score": 0.034622,
             "tone_id": "anger",
             "tone_name": "Anger"
           },
@@ -129,12 +129,12 @@ var response = {
             "tone_name": "Fear"
           },
           {
-            "score": 0.013411,
+            "score": 0.7013411,
             "tone_id": "joy",
             "tone_name": "Joy"
           },
           {
-            "score": 0.635069,
+            "score": 0.335069,
             "tone_id": "sadness",
             "tone_name": "Sadness"
           }
@@ -144,6 +144,27 @@ var response = {
       }
     ]
   }
+}
+
+function analyze(text) {
+	var requestHeaders = new Headers();
+
+	requestHeaders.append('Content-Type', 'application/json');
+	requestHeaders.append('Authentication', '6c015e10-5743-4c49-9626-32ef1a918dc1:lddfWUPUeHEm');
+
+	var data = new FormData();
+	data.append( "text", "yaay" );
+
+	fetch('https://stream.watsonplatform.net/tone-analyzer/api/v3/tone?version=2016-05-19&tone=emotion', {
+		   method: 'GET',
+	       headers: requestHeaders,
+	       data: data,
+	       mode: 'cors'
+	}).then(function(data) {
+		data.json();
+	}).then(function(json) {
+		console.log(json);
+	})
 }
 
 function displayAnalysis(text) {
@@ -159,13 +180,13 @@ function displayAnalysis(text) {
 	let detailButton = document.createElement("div");
 	detailButton.setAttribute('id', 'watson-details-button');
 	detailButton.setAttribute('class', 'details enabled');
-	detailButton.innerHTML = 'details';
+	detailButton.innerHTML = 'Details';
 	topBar.appendChild(detailButton);
 	
 	var backButton = document.createElement('div');
 	backButton.setAttribute('id','watson-back-button');
 	backButton.setAttribute('class','back-button disabled');
-	backButton.innerHTML = '<';
+	backButton.innerHTML = '&#10094;';
 	topBar.appendChild(backButton);
 
 	detailButton.addEventListener('click', function(e) {
@@ -204,18 +225,71 @@ function displayAnalysis(text) {
 	}
 
 	function getMainContent() {
-		return "yay";
-		
-	}
 
-	function getSecondaryContent() {
-		let list = document.createElement("ul");
+		let container = document.createElement("div");
+		container.setAttribute('class', 'main-report');
+		
+		let best_score = 0;
+		let emotion = "";
+
 		for (var i = 0; i < tones.length; i++) {
+			
 			var tone = tones[i];
 			
 			var tone_name = tone.tone_name
 			var tone_score = Math.round(tone.score/1 * 100);
-			list.innerHTML += "<li><span class='tone-title'>" + tone_name + ":</span> <span class='tone-score'>" + tone_score + "%</span></li>";
+			
+			if (tone_score > best_score) {
+				best_score = tone_score;
+				emotion = tone_name;
+			}
+
+		}
+
+		switch (emotion) {
+			case "Anger":
+				var image = "assets/angry.png";
+				var message = "Angry";
+				break;
+
+			case "Disgust":
+				var image = "assets/sad.png";
+				var message = "Disgusted";
+				break;
+
+			case "Fear":
+				var image = "assets/sad.png";
+				var message = "Fearful";
+				break;
+
+			case "Sadness":
+				var image = "assets/sad.png";
+				var message = "Sad";
+				break;
+
+			case "Joy": 
+				var image = "assets/happy.png";
+				var message = "Joyful";
+				break;
+		}
+
+		container.innerHTML += "<div class='image-container'><img src='" + image + "'></div><div class='tone-title'>" + message + "</div>";
+
+		return container;
+	}
+
+	function getSecondaryContent() {
+		
+		let list = document.createElement("ul");
+		
+		for (var i = 0; i < tones.length; i++) {
+			
+			var tone = tones[i];
+			
+			var tone_name = tone.tone_name
+			var tone_score = Math.round(tone.score/1 * 100);
+			list.innerHTML += "<li><span class='tone-name'>" + tone_name + ":</span> <span class='tone-score'>" + tone_score + "%</span></li>";
+		
 		}
 
 		return list;
@@ -223,6 +297,7 @@ function displayAnalysis(text) {
 }
 
 function addCSS() {
+	
 	var css = document.createElement('style');
 	css.innerHTML = "\
 	.watson-check {\
@@ -241,25 +316,39 @@ function addCSS() {
 	.watson-check .popup .top-bar {\
 		overflow: auto;\
 	}\
+	.watson-check .popup .top-bar > * {\
+		width: 30%;\
+		padding: 5px 20px 5px 5px;\
+		text-align: center;\
+		transition: opacity 0.2s, color 0.2s;\
+	}\
 	.watson-check .popup .top-bar .back-button {\
 		float: left;\
+		font-size: 16px;\
 		position: relative;\
 		left: 0;\
-		transition: color 0.1s, left 0.1s;\
+		transition: color 0.1s, opacity 0.1s, left 0.1s;\
+		color: #66f;\
+	}\
+	.watson-check .popup .top-bar .back-button:hover {\
+		color: #6af;\
 	}\
 	.watson-check .popup .top-bar .back-button.enable {\
-		color: initial;\
+		opacity: 1;\
 		left: 0;\
 	}\
 	.watson-check .popup .top-bar .back-button.disabled {\
-		color: transparent;\
+		opacity: 0;\
 		left: -20px;\
 	}\
 	.watson-check .popup .top-bar .details {\
 		float: right;\
 		position: relative;\
 		right: 0;\
-		transition: opacity 0.1s;\
+		color: #66f;\
+	}\
+	.watson-check .popup .top-bar .details:hover {\
+		color: #6af;\
 	}\
 	.watson-check .popup .top-bar .details.enabled {\
 		opacity: 1;\
@@ -267,12 +356,31 @@ function addCSS() {
 	.watson-check .popup .top-bar .details.disabled {\
 		opacity: 0;\
 	}\
-	.watson-check .popup .tone-title {\
+	.watson-check .popup .watson-content {\
+		padding: 10px 20px;\
+	}\
+	.watson-check .popup .watson-content .image-container {\
+		width: 70%;\
+		margin: auto;\
+	}\
+	.watson-check .popup .watson-content .image-container img {\
+		max-width: 100%;\
+		max-height: 100%;\
+	}\
+	.watson-check .popup .main-report { \
+		position: relative;\
+		animation-name: show;\
+		animation-duration: 0.2s;\
+	}\
+	.watson-check .popup .watson-content .tone-title {\
+		text-align: center;\
+	}\
+	.watson-check .popup .tone-name {\
 		font-size: 13px;\
 		font-weight: bold;\
 	}\
 	.show {\
-		opacity: 1; \
+		opacity: 1;\
 		animation-name: show;\
 		animation-duration: 0.1s;\
 	}\
@@ -284,21 +392,21 @@ function addCSS() {
 	@keyframes show {\
 		0% {\
 			opacity: 0;	\
-			bottom: 0;	\
+			bottom: -20px;	\
 		}\
 		100% {\
 			opacity: 1;\
-			bottom: 20px;	\
+			bottom: 0px;	\
 		}\
 	}\
 	@keyframes hide {\
 		0% {\
 			opacity: 1;	\
-			bottom: 20px;	\
+			bottom: 0px;	\
 		}\
 		100% {\
 			opacity: 0;\
-			bottom: 0;	\
+			bottom: -20px;	\
 		}\
 	}\
 	";
