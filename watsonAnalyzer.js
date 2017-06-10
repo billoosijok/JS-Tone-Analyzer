@@ -1,12 +1,15 @@
 window.addEventListener('load', function() {
- Analyzer();
+ 	Analyzer();
 });
 
 function Analyzer() {
 
 	// Getting all the textareas
-	var textareas = document.getElementsByClassName('analyze');
+	var textareas = document.getElementsByTagName('textarea');
+	var assets = 'assets'
+	
 	addCSS()
+	
 	for (var i = 0; i < textareas.length; i++) {
 		let textarea = textareas[i];	
 		let checkerButton = document.createElement('div');
@@ -16,8 +19,34 @@ function Analyzer() {
 		var wrapper = wrapTextarea(textarea);
 		wrapper.appendChild(checkerButton);
 
-		setUpCheckerButton(checkerButton);
+		var button = setUpCheckerButton(checkerButton);
 
+		button.addEventListener('click', function(e) {
+			let clickedButton = e.target;
+			
+			if (textarea.value.trim() != '') {
+
+				var loading = document.createElement('div')
+				loading.innerHTML = "<div><img src='"+assets+"/loading.gif?d'></div>Analyzing ...";
+				loading.setAttribute('class', 'load message');
+
+				var popup = createPopup();
+				
+				popup.appendChild(loading);
+				analyze(popup, textarea.value.trim());
+
+
+			} else {
+				var errorDiv = document.createElement('div');
+				errorDiv.setAttribute('class', 'error message');
+				errorDiv.innerHTML = 'Please enter text to analyze';
+
+				var popup = createPopup(errorDiv)
+			}
+
+			clickedButton.appendChild(popup);
+
+		});
 	}
 }
 
@@ -39,16 +68,10 @@ function setUpCheckerButton(button, options) {
 	
 	styleButton(options);
 
-	button.setAttribute('title', 'Analyze The Tone of The Text');
+	button.setAttribute('title', 'Analyze Tone');
 	button.setAttribute('class', 'watson-check');
 	
-	button.addEventListener('click', function(e) {
-		analyze()
-		var analysis = displayAnalysis()
-		var popup = createPopup(analysis);
-
-		button.appendChild(popup);
-	});
+	return button;
 
 	function styleButton(options) {
 		let buttonCss = button.style
@@ -63,7 +86,7 @@ function setUpCheckerButton(button, options) {
 		buttonCss.backgroundSize = "90%";
 		buttonCss.backgroundRepeat = "no-repeat";
 		buttonCss.backgroundPosition = "center center";
-		buttonCss.cursor = "pointer";		
+		buttonCss.cursor = "pointer";	
 
 		var parentStyles = getComputedStyle(button.parentElement,null);
 		if (parentStyles.getPropertyValue('position') == 'static') {
@@ -84,9 +107,10 @@ function createPopup(childElement) {
 	popup.style.borderRadius = "5px";
 	popup.style.padding = "0";
 	popup.style.boxShadow = "0 0 4px rgba(0,0,0,0.4)";
-	popup.style.overflow = "scroll";
+	// popup.style.overflow = "scroll";
 
-	popup.appendChild(childElement);
+	if (childElement) 
+		popup.appendChild(childElement);
 
 	popup.setAttribute('class', 'show popup');
 
@@ -108,67 +132,37 @@ function createPopup(childElement) {
 	return popup;
 }
 
-var response = {
-  "document_tone": {
-    "tone_categories": [
-      {
-        "tones": [
-          {
-            "score": 0.034622,
-            "tone_id": "anger",
-            "tone_name": "Anger"
-          },
-          {
-            "score": 0.013182,
-            "tone_id": "disgust",
-            "tone_name": "Disgust"
-          },
-          {
-            "score": 0.092403,
-            "tone_id": "fear",
-            "tone_name": "Fear"
-          },
-          {
-            "score": 0.7013411,
-            "tone_id": "joy",
-            "tone_name": "Joy"
-          },
-          {
-            "score": 0.335069,
-            "tone_id": "sadness",
-            "tone_name": "Sadness"
-          }
-        ],
-        "category_id": "emotion_tone",
-        "category_name": "Emotion Tone"
-      }
-    ]
-  }
-}
-
-function analyze(text) {
-	var requestHeaders = new Headers();
-
-	requestHeaders.append('Content-Type', 'application/json');
-	requestHeaders.append('Authentication', '6c015e10-5743-4c49-9626-32ef1a918dc1:lddfWUPUeHEm');
+function analyze(container, text) {
 
 	var data = new FormData();
-	data.append( "text", "yaay" );
+	data.append("text", text);
+	// data.append("test", 'true');
+	
+	fetch('http://localhost/teamhub/inc/ibm.php', {
+		method : 'POST',
+		body : data
 
-	fetch('https://stream.watsonplatform.net/tone-analyzer/api/v3/tone?version=2016-05-19&tone=emotion', {
-		   method: 'GET',
-	       headers: requestHeaders,
-	       data: data,
-	       mode: 'cors'
 	}).then(function(data) {
-		data.json();
+		return data.json();
 	}).then(function(json) {
-		console.log(json);
-	})
+
+		displayAnalysis(container, json)
+		
+	}, function(error) {
+		console.log(error);
+
+		var errorDiv = document.createElement('div');
+		errorDiv.setAttribute('class', 'error message');
+		errorDiv.innerHTML = "Something went wrong while processing your text";
+		
+		container.innerHTML = ''
+		container.appendChild(errorDiv);
+
+	});
 }
 
-function displayAnalysis(text) {
-	let tones = response.document_tone.tone_categories[0].tones;
+function displayAnalysis(parent, json) {
+	let tones = json.document_tone.tone_categories[0].tones;
 	
 	let container = document.createElement("div");
 	container.setAttribute('class', 'result-container');
@@ -212,6 +206,9 @@ function displayAnalysis(text) {
 	container.appendChild(content);
 
 	displayContent(getMainContent());
+
+	parent.innerHTML = '';
+	parent.appendChild(container);
 
 	return container;
 
@@ -273,7 +270,7 @@ function displayAnalysis(text) {
 				break;
 		}
 
-		container.innerHTML += "<div class='image-container'><img src='" + image + "'></div><div class='tone-title'>" + message + "</div>";
+		container.innerHTML += "<div class='image-container'><img src='" + image + "'></div><div class='tone-message'><span class='tone-title'>" + message + "</span></div>";
 
 		return container;
 	}
@@ -304,14 +301,23 @@ function addCSS() {
 		/*opacity: 0;\
 		animation-name: hide;\
 		animation-duration: 0.2s;*/\
-		transition: background-color 0.2s;\
+		box-shadow: 0 2px 5px rgba(0,0,0,0.3);\
+		transition: background-color 0.2s, box-shadow 0.2s;\
 	}\
 	.watson-check:hover {\
-		background-color: rgba(0,0,0,0.1);\
+		background-color: rgba(0,0,0,0.03);\
+		box-shadow: 0 2px 5px rgba(0,0,0,0.6);\
 	}\
 	.watson-check .popup ul {\
 		list-style: none;\
 		padding-left: 0;\
+	}\
+	.watson-check .popup .message {\
+		padding: 30px 10px;\
+		text-align: center;\
+		font-size: 18px;\
+		color: rgba(0,0,0,0.5);\
+		font-weight: bold;\
 	}\
 	.watson-check .popup .top-bar {\
 		overflow: auto;\
@@ -372,8 +378,11 @@ function addCSS() {
 		animation-name: show;\
 		animation-duration: 0.2s;\
 	}\
-	.watson-check .popup .watson-content .tone-title {\
+	.watson-check .popup .watson-content .tone-message {\
 		text-align: center;\
+	}\
+	.watson-check .popup .watson-content .tone-title {\
+		font-weight: bold;\
 	}\
 	.watson-check .popup .tone-name {\
 		font-size: 13px;\
