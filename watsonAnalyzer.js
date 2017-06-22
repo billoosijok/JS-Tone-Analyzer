@@ -7,13 +7,13 @@ function Analyzer() {
 	// Getting all the textareas
 	var textareas = document.getElementsByTagName('textarea');
 	var assets = 'assets'
-	
+
 	addCSS()
-	
+
 	for (var i = 0; i < textareas.length; i++) {
-		let textarea = textareas[i];	
+		let textarea = textareas[i];
 		let checkerButton = document.createElement('div');
-		
+
 		checkerButton.setAttribute('class', 'analze-button');
 
 		var wrapper = wrapTextarea(textarea);
@@ -23,7 +23,7 @@ function Analyzer() {
 
 		button.addEventListener('click', function(e) {
 			let clickedButton = e.target;
-			
+
 			if (textarea.value.trim() != '') {
 
 				var loading = document.createElement('div')
@@ -31,7 +31,7 @@ function Analyzer() {
 				loading.setAttribute('class', 'load message');
 
 				var popup = createPopup();
-				
+
 				popup.appendChild(loading);
 				analyze(popup, textarea.value.trim());
 
@@ -53,8 +53,9 @@ function Analyzer() {
 function wrapTextarea(textarea) {
 
 	let wrapper = document.createElement('div');
+  let textAreaStyles = window.getComputedStyle(textarea)
 
-	wrapper.style.display = textarea.style.display;
+	wrapper.style.display = textAreaStyles.getPropertyValue('display');
 	textarea.parentElement.insertBefore(wrapper, textarea);
 
 	wrapper.appendChild(textarea);
@@ -65,12 +66,12 @@ function wrapTextarea(textarea) {
 
 function setUpCheckerButton(button, options) {
 	options = options || {};
-	
+
 	styleButton(options);
 
 	button.setAttribute('title', 'Analyze Tone');
 	button.setAttribute('class', 'watson-check');
-	
+
 	return button;
 
 	function styleButton(options) {
@@ -86,7 +87,7 @@ function setUpCheckerButton(button, options) {
 		buttonCss.backgroundSize = "90%";
 		buttonCss.backgroundRepeat = "no-repeat";
 		buttonCss.backgroundPosition = "center center";
-		buttonCss.cursor = "pointer";	
+		buttonCss.cursor = "pointer";
 
 		var parentStyles = getComputedStyle(button.parentElement,null);
 		if (parentStyles.getPropertyValue('position') == 'static') {
@@ -97,7 +98,7 @@ function setUpCheckerButton(button, options) {
 
 function createPopup(childElement) {
 	var popup = document.createElement('div');
-	
+
 	popup.style.position = 'absolute';
 	popup.style.backgroundColor = "#eee";
 	popup.style.width = "200px";
@@ -109,7 +110,7 @@ function createPopup(childElement) {
 	popup.style.boxShadow = "0 0 4px rgba(0,0,0,0.4)";
 	// popup.style.overflow = "scroll";
 
-	if (childElement) 
+	if (childElement)
 		popup.appendChild(childElement);
 
 	popup.setAttribute('class', 'show popup');
@@ -117,10 +118,10 @@ function createPopup(childElement) {
 	document.body.addEventListener('click', removePopup, true);
 
 	function removePopup(e) {
-		if (e.target.getAttribute('id') != 'watson-details-button' 
+		if (e.target.getAttribute('id') != 'watson-details-button'
 			&& e.target.getAttribute('id')  != 'watson-back-button') {
 			popup.setAttribute('class', 'hide show popup');
-		
+
 			setTimeout(function() {
 				popup.remove();
 			}, 200);
@@ -137,7 +138,7 @@ function analyze(container, text) {
 	var data = new FormData();
 	data.append("text", text);
 	// data.append("test", 'true');
-	
+
 	fetch('http://localhost/teamhub/inc/ibm.php', {
 		method : 'POST',
 		body : data
@@ -147,14 +148,14 @@ function analyze(container, text) {
 	}).then(function(json) {
 
 		displayAnalysis(container, json)
-		
+
 	}, function(error) {
 		console.log(error);
 
 		var errorDiv = document.createElement('div');
 		errorDiv.setAttribute('class', 'error message');
 		errorDiv.innerHTML = "Something went wrong while processing your text";
-		
+
 		container.innerHTML = ''
 		container.appendChild(errorDiv);
 
@@ -163,7 +164,7 @@ function analyze(container, text) {
 
 function displayAnalysis(parent, json) {
 	let tones = json.document_tone.tone_categories[0].tones;
-	
+
 	let container = document.createElement("div");
 	container.setAttribute('class', 'result-container');
 
@@ -176,7 +177,7 @@ function displayAnalysis(parent, json) {
 	detailButton.setAttribute('class', 'details enabled');
 	detailButton.innerHTML = 'Details';
 	topBar.appendChild(detailButton);
-	
+
 	var backButton = document.createElement('div');
 	backButton.setAttribute('id','watson-back-button');
 	backButton.setAttribute('class','back-button disabled');
@@ -185,10 +186,10 @@ function displayAnalysis(parent, json) {
 
 	detailButton.addEventListener('click', function(e) {
 		e.stopPropagation();
-		
+
 		backButton.setAttribute('class', 'back-button enabled');
 		detailButton.setAttribute('class', 'details disabled');
-		
+
 		displayContent(getSecondaryContent());
 	});
 
@@ -225,17 +226,17 @@ function displayAnalysis(parent, json) {
 
 		let container = document.createElement("div");
 		container.setAttribute('class', 'main-report');
-		
+
 		let best_score = 0;
 		let emotion = "";
 
 		for (var i = 0; i < tones.length; i++) {
-			
+
 			var tone = tones[i];
-			
+
 			var tone_name = tone.tone_name
 			var tone_score = Math.round(tone.score/1 * 100);
-			
+
 			if (tone_score > best_score) {
 				best_score = tone_score;
 				emotion = tone_name;
@@ -264,7 +265,7 @@ function displayAnalysis(parent, json) {
 				var message = "Sad";
 				break;
 
-			case "Joy": 
+			case "Joy":
 				var image = "assets/happy.png";
 				var message = "Joyful";
 				break;
@@ -276,17 +277,17 @@ function displayAnalysis(parent, json) {
 	}
 
 	function getSecondaryContent() {
-		
+
 		let list = document.createElement("ul");
-		
+
 		for (var i = 0; i < tones.length; i++) {
-			
+
 			var tone = tones[i];
-			
+
 			var tone_name = tone.tone_name
 			var tone_score = Math.round(tone.score/1 * 100);
 			list.innerHTML += "<li><span class='tone-name'>" + tone_name + ":</span> <span class='tone-score'>" + tone_score + "%</span></li>";
-		
+
 		}
 
 		return list;
@@ -294,7 +295,7 @@ function displayAnalysis(parent, json) {
 }
 
 function addCSS() {
-	
+
 	var css = document.createElement('style');
 	css.innerHTML = "\
 	.watson-check {\
@@ -421,4 +422,4 @@ function addCSS() {
 	";
 
 	document.body.appendChild(css);
-} 
+}
