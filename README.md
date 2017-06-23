@@ -1,2 +1,5 @@
 # JS-Watson-Analyzer
 Grammerly, but it analyzes voice tone instead. It uses IBM's watson api to provide a GUI for the tone analysis.
+
+Inline-style: 
+![alt text](https://lh3.googleusercontent.com/R4_rzlukqHzzSXTxNqEJ37sZiBewjgiVJ6s00tMgBlFpxiMoFgZIxLDAeLm8T6d_21ZF2Fexdaj5UZJVlVy42cMERVzLNuE6fv3LhE1u9rEKVrvHhWje3lboa7PS6oQ2xncX1iCf_m8NbG7xhR3CBHozssakmsgVoQWQGDnHANXNAnFq2Ewft815LMN0H5M-U05-WX4fbzS--BnfX42YszM_xq7SlmLhZr9m-StWsNLTwl6t2Pqg4NoBJsTuNGb5JrFc9AKjoX2suqddL4CTsnBUMFCncbzvb6CJ34BZDU5i3cyP8N8bBM1x8ZXNd7_iznTma4uopgpmFfpoHe5Hx6H37AhisOjIpsU6aS5cz5vXAmnpXtP_HBsy8fn7-K-Tbu2FnPgyYQ7y8jJiPWUi96wCGAdBO1oZda8KPQyUVKQ-ugf2Uq_nDMBJE-qPiDmpa1bNVUU0SciE2KZ4UwUJxQPPY8IDrL0DBkrN-E1t5rzmB5hJZhpjqVGxgoimCWW8Kp6gen8TzDJuiyInswlicKQwpsZRfSpopWy-StWa67WfhmoLK_7OrcNAiZ-xGLIcfqeGrNMY=w2480-h1316 "Logo Title Text 1")
